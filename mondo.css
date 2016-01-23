@@ -1,0 +1,16 @@
+body {
+    background-image: url('bg.png');
+}
+
+.label {
+  font-family: helvetica, arial;
+  font-weight: bold;
+  font-size: 14;
+  color: white;
+}
+.value {
+  font-family: helvetica, arial;
+  font-weight: lighter;
+  font-size: 14;
+  color: white;
+}

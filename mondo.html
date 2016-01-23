@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Mondo Bank Extension</title>
+<script src="jquery/jquery-2.1.3.min.js"></script>
+</head>
+<body>
+
+  <script>
+  safari.application.addEventListener("popover", popoverHandler, false);
+  var balance = "";
+  var spend_today = "";
+  var currency = "";
+
+
+  function authenticate()
+  {
+      // Authenticate
+      $.post( "https://production-api.gmon.io/oauth2/token",
+      { grant_type: "password",
+        client_id: safari.extension.settings.getItem('oauth_id'),
+        client_secret: safari.extension.settings.getItem('client_secret'),
+        username: safari.extension.secureSettings.getItem('username'),
+        password: safari.extension.secureSettings.getItem('password')
+      }).done(function(data) {
+        safari.extension.secureSettings.access_token = data.access_token;
+
+        getAccounts();
+        getBalance();
+
+        return true;
+      }).fail(function(data) {
+        alert("derp");
+        return false;
+      });
+
+      return false;
+  }
+
+  function getAccounts()
+  {
+
+    var request = {};
+    request.url = "https://production-api.gmon.io/accounts";
+    request.beforeSend = function (xhr) {xhr.setRequestHeader("Authorization", "Bearer " + safari.extension.secureSettings.access_token)};
+    request.type = "GET";
+
+    $.ajax(request).done(function(data)
+    {
+     safari.extension.secureSettings.account_id = data.accounts[0].id;
+     console.log("acc : " + safari.extension.secureSettings.account_id);
+    }).fail(function(data)
+    {
+     alert("failed to get accounts")
+    });
+  }
+
+  function getBalance()
+  {
+
+    var request = {};
+    request.url = "https://production-api.gmon.io/balance?account_id=" + safari.extension.secureSettings.account_id;
+    request.beforeSend = function (xhr) {xhr.setRequestHeader("Authorization", "Bearer " + safari.extension.secureSettings.access_token)};
+    request.type = "GET";
+
+    $.ajax(request).done(function(data)
+    {
+       balance = data.balance;
+       currency = data.currency;
+       spend_today = data.spend_today;
+
+    }).fail(function(data)
+    {
+     alert("failed to get balance")
+    });
+
+  }
+
+  authenticate();
+
+  function fetchBalance()
+  {
+    return "£" + (balance / 100);
+  }
+  function fetchSpent()
+  {
+    return "£" + (spend_today / 100);
+  }
+
+
+function popoverHandler(event)
+{
+
+ 	if (event.target.identifier === "info.popover")
+  {
+
+    getBalance();
+    popover = event.target;
+    popover.contentWindow.setBalance(fetchBalance());
+    popover.contentWindow.setSpent(fetchSpent());
+  }
+
+}
+
+
+  </script>
+
+</body>
+</html>

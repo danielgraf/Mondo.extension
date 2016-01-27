@@ -4,11 +4,27 @@
 <meta charset="UTF-8">
 <title>Mondo Bank Extension</title>
 <script src="jquery/jquery-2.1.3.min.js"></script>
+<script src="jquery/jquery.tooltipster.min.js"></script>
+<link rel="stylesheet" type="text/css" href="mondo.css">
+<link rel="stylesheet" type="text/css" href="tooltipster.css">
 </head>
 <body>
 
   <script>
+  //var api = "https://staging-api.gmon.io";
+  var api = "https://production-api.gmon.io";
+
   safari.application.addEventListener("popover", popoverHandler, false);
+  safari.application.addEventListener( "message", function( e ) {
+
+      if( e.name === "getBalance" ) {
+        console.log("GET BALANCE CALLED");
+        getBalance();
+
+      }
+    }, false );
+
+
   var balance = "";
   var spend_today = "";
   var currency = "";
@@ -17,7 +33,7 @@
   function authenticate()
   {
       // Authenticate
-      $.post( "https://production-api.gmon.io/oauth2/token",
+      $.post( api + "/oauth2/token",
       { grant_type: "password",
         client_id: safari.extension.settings.getItem('oauth_id'),
         client_secret: safari.extension.settings.getItem('client_secret'),
@@ -42,14 +58,14 @@
   {
 
     var request = {};
-    request.url = "https://production-api.gmon.io/accounts";
+    request.url = api + "/accounts";
     request.beforeSend = function (xhr) {xhr.setRequestHeader("Authorization", "Bearer " + safari.extension.secureSettings.access_token)};
     request.type = "GET";
 
     $.ajax(request).done(function(data)
     {
      safari.extension.secureSettings.account_id = data.accounts[0].id;
-     console.log("acc : " + safari.extension.secureSettings.account_id);
+     console.log("new acc : " + safari.extension.secureSettings.account_id);
     }).fail(function(data)
     {
      alert("failed to get accounts")
@@ -60,7 +76,7 @@
   {
 
     var request = {};
-    request.url = "https://production-api.gmon.io/balance?account_id=" + safari.extension.secureSettings.account_id;
+    request.url = api + "/balance?account_id=" + safari.extension.secureSettings.account_id;
     request.beforeSend = function (xhr) {xhr.setRequestHeader("Authorization", "Bearer " + safari.extension.secureSettings.access_token)};
     request.type = "GET";
 
@@ -69,6 +85,8 @@
        balance = data.balance;
        currency = data.currency;
        spend_today = data.spend_today;
+       //e.target.page.dispatchMessage( "getBalance", fetchBalance());
+       safari.application.activeBrowserWindow.activeTab.page.dispatchMessage("getBalance", fetchBalance());
 
     }).fail(function(data)
     {
@@ -81,11 +99,13 @@
 
   function fetchBalance()
   {
-    return "£" + (balance / 100);
+    var b = (balance / 100);
+    return "£" + b.toFixed(2);
   }
   function fetchSpent()
   {
-    return "£" + (spend_today / 100);
+    var s = (0 - spend_today / 100);
+    return "£" + s.toFixed(2);
   }
 
 

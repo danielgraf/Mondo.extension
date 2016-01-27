@@ -14,3 +14,9 @@ body {
   font-size: 14;
   color: white;
 }
+
+.ok {
+  background-color: blue;
+  width: 16px;
+  height: 16px;
+}
